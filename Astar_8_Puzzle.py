@@ -1,9 +1,13 @@
-#Import priority queue algorithim
+'''
+By Prithvi Koka and Krishna Patel
+ITCS 6150-091
+'''
+#Import priority queue algorithm
 import heapq
 
 #Initiate a PuzzleState class 
-#Stores board confirguration, parent state, move token, depth, and total cost
-#Depth is g(n) and cost is h(n)
+#Stores board configuration, parent state, move token, depth, and total cost
+#Cost is f(n) = g(n) + h(n)
 class PuzzleState:
     def __init__(self, board, parent, move, depth, cost):
         self.board = board
@@ -45,7 +49,7 @@ def heuristic_misplaced(board, goal_pos):
             if tile != 0 and goal_pos[tile] != divmod(i, 3))
         
 
-#2 Heuristic function (Manhatthan Distance) which computes how far each tile is from the correct position in goal state.
+#2 Heuristic function (Manhattan Distance) which computes how far each tile is from the correct position in goal state.
 #A* prioritizes tiles with less distance
 def heuristic_manhattan(board, goal_pos):
     distance = 0
@@ -71,7 +75,7 @@ def move_tile(board, move, blank_pos):
 
 
 #A* function searches optimal solution
-#Uses priority queue to explore staes with lowest estimated cost, search continues until goal state is found
+#Uses priority queue to explore states with lowest estimated cost, search continues until goal state is found
 #Invalid moves are ignored (Can't move outside boundaries of 3x3)
 #Start_State is the initial state of the board
 def a_star(start_state, goal_state, heuristic):
@@ -93,17 +97,20 @@ def a_star(start_state, goal_state, heuristic):
         if tuple(current_state.board) in closed_list:
             continue
 
-        #If state is already goal, return goal
+        #If current state is already goal, return current state
         if current_state.board == goal_state:
             return current_state, generated, expanded
 
         #Closed List adds current state
         closed_list.add(tuple(current_state.board))
 
+        #Expanded
         expanded += 1
 
+        #Find the blank index
         blank_pos = current_state.board.index(0)
 
+        #Generate successors
         for move in moves:
             if move == 'U' and blank_pos < 3:  
                 continue
@@ -114,15 +121,18 @@ def a_star(start_state, goal_state, heuristic):
             if move == 'R' and blank_pos % 3 == 2:  
                 continue
 
+            #Generate new board
             new_board = move_tile(current_state.board, move, blank_pos)
 
+            #Checks whether the board we just generated has already been explored. Following line is path cost of successor
             if tuple(new_board) in closed_list:
                 continue
             g = current_state.depth + 1
 
-            
+            #Pushes new board onto queue
             heapq.heappush(open_list, PuzzleState(new_board, current_state, move, g, g + heuristic(new_board, goal_pos)))
 
+            #Add one since new board generated
             generated += 1
 
     return None, generated, expanded
@@ -137,10 +147,13 @@ def print_solution(solution):
     path.reverse()
 
     for step in path:
-        print(f"Move: {step.move}")
+        if step.move is None:
+            print("Initial state")
+        else:
+            print(f"Move {step.move}")
         print_board(step.board)
 
-
+#User input function for initial state and goal state.
 def read_state(prompt):
     while True:
         raw = input(f"{prompt} (9 numbers 0-8, 0 = blank): ").replace(",", " ").split()
@@ -154,6 +167,7 @@ def read_state(prompt):
             continue
         return values
 
+#Counts inversions and checks to see if number of inversions are even (solvable)
 def inversion_parity(board):
     tiles = [t for t in board if t != 0]
     inversions = sum(1 for i in range(len(tiles))
@@ -171,7 +185,8 @@ print_board(initial_state)
 print("Goal State")
 print_board(goal_state)
 
-#No solution found, goal isn't reachable
+#Inversion Check: No solution found, goal isn't reachable
+#Prints out solution with number of nodes generated, and expanded.
 if inversion_parity(initial_state) != inversion_parity(goal_state):
     print("No solution exists (goal not reachable from initial state).")
 else:
@@ -186,4 +201,5 @@ else:
             print(f"Nodes expanded:  {expanded}")
         else:
             print("No solution exists.")
+
 
